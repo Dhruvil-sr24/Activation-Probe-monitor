@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  probe-monitor:
+    build:
+      context: .
+      target: runtime
+    container_name: probe-safety-monitor
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_NAME=gpt2
+      - DEVICE=cpu
+      - TORCH_DTYPE=float32
+      - MAX_LENGTH=128
+      - PROBE_THRESHOLD=0.5
+    volumes:
+      # Mount artifacts so trained probes persist between container restarts
+      - ./artifacts:/app/artifacts
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
